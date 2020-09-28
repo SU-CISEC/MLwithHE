@@ -14,7 +14,7 @@
  * @return nothing.
  * @note This functions assumes file does not have header line.
  */
-void ReadDataFile(std::vector<std::vector<double>> & dataColumns,
+void ReadXFile(std::vector<std::vector<double>> & dataColumns,
                  string dataFileName, size_t N, size_t M)
 {
 

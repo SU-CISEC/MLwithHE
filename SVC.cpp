@@ -1,3 +1,7 @@
+/**
+ * REFERENCE functions which are taken from libsvm library.()
+ */
+
 /*
  Attributes
     ----------
@@ -361,4 +365,18 @@ struct svm_node *dense_to_libsvm (double *x, npy_intp *dims)
 
     return node;
 }
+
+model = set_model(&param, <int> nSV.shape[0], SV.data, SV.shape,
+                  support.data, support.shape, sv_coef.strides,
+                  sv_coef.data, intercept.data, nSV.data,
+                  probA.data, probB.data);
+
+struct svm_model *set_model(struct svm_parameter *param, int nr_class,
+                            char *SV, npy_intp *SV_dims,
+                            char *support, npy_intp *support_dims,
+                            npy_intp *sv_coef_strides,
+                            char *sv_coef, char *rho, char *nSV,
+                            char *probA, char *probB)
+
+
 
