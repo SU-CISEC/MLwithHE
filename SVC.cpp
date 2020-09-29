@@ -1,7 +1,7 @@
 /**
  * REFERENCE functions which are taken from libsvm library.()
  */
-
+#include "utils.h"
 /*
  Attributes
     ----------
@@ -209,9 +209,7 @@ double predict_values(const model *model, const node *x, double* dec_values, Bla
 			if(vote[i] > vote[vote_max_idx])
 				vote_max_idx = i;
 
-		free(kvalue);
-		free(start);
-		free(vote);
+
 		return model->label[vote_max_idx];
 	}
 }
@@ -284,7 +282,7 @@ static void multiclass_probability(int k, double **r, double *p)
 		}
 	}
 	if (iter>=max_iter)
-		info("Exceeds max_iter in multiclass_prob\n");
+		std::cout << "Exceeds max_iter in multiclass_prob\n";
 	for(t=0;t<k;t++) free(Q[t]);
 	free(Q);
 	free(Qp);
@@ -315,6 +313,7 @@ double predict_probability(
 			}
                 multiclass_probability(nr_class,pairwise_prob,prob_estimates);
 
+			// Do not need
 		int prob_max_idx = 0;
 		for(i=1;i<nr_class;i++)
 			if(prob_estimates[i] > prob_estimates[prob_max_idx])
@@ -344,7 +343,7 @@ double predict(const model *model, const node *x, BlasFunctions *blas_functions)
 	return pred_result;
 }
 
-
+// Buna gerek yok
 struct svm_node *dense_to_libsvm (double *x, npy_intp *dims)
 {
     struct svm_node *node;
