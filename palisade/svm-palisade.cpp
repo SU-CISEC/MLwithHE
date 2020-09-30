@@ -19,23 +19,25 @@ int main(int argc, char **argv) {
     std::vector< std::vector<double>> svData;
     std::vector< std::vector<double>> svCoefData;
 
-    string xFilename = "../data/XScaled";
-    string yFilename = "../data/Y";
-    string svFilename = "../data/SV";
-    string svCoefFilename = "../data/sv_coef";
+    std::vector<int> svIndex;
+    std::vector<int> svClass;
 
-    size_t trainN = 270; // how many sample used for training
-    size_t testN = 270;  // how many sample for predicting
+    size_t trainN = 268; // how many sample used for training
+    size_t testN = 268;  // how many sample for predicting
     size_t M = 1000;
-    size_t nr_class = 10;
+    size_t nr_class = 11;
 
     //Test Data
-    ReadMatrixFile(xData, xFilename,testN,M);
-    ReadVectorFile(yData,yFilename, testN);
+    ReadMatrixFile(xData, "../data/XScaled",testN,M);
+    ReadVectorFile(yData,"../data/Y", testN);
 
     // Precomputed Trained Data
-    ReadMatrixFile(svData, svFilename,trainN,M);
-    ReadMatrixFile(svCoefData, svCoefFilename, nr_class, trainN);
+    ReadMatrixFile(svData, "../data/SV",trainN,M);
+    ReadMatrixFile(svCoefData, "../data/sv_coef", nr_class-1, trainN);
+
+    //Support Vector Indices for Trained Model
+    ReadVectorFile(svIndex,"../data/SV_index",trainN);
+    ReadVectorFile(svClass,"../data/SV_class",nr_class);
 
     //// KEY GENERATION
 //    double scalingFactor = 5e-1;
@@ -68,6 +70,8 @@ int main(int argc, char **argv) {
 
 
     auto keyPair = cc->KeyGen();
+    cc->EvalMultKeysGen(keyPair.secretKey);
+    cc->EvalSumKeyGen(keyPair.secretKey);
 
     //// ENCODE and ENCRYPTION
     size_t sizeF = (size_t)std::ceil((double)xData[0].size() / (m / 4));
@@ -117,7 +121,7 @@ int main(int argc, char **argv) {
     cout << "SV encrypted." << endl;
 
 //#pragma omp parallel for
-    for (size_t i = 0; i < nr_class; ++i) {
+    for (size_t i = 0; i < nr_class-1; ++i) {
         for (size_t x=0; x < sizeC; x++){
             Plaintext cTemp = cc->MakeCKKSPackedPlaintext(svCoefDataArray[x][i]);
             C[x][i] = cc->Encrypt(keyPair.publicKey, cTemp);
@@ -126,6 +130,35 @@ int main(int argc, char **argv) {
     cout << "C encrypted." << endl;
     //// SVM OPERATIONS
 
+    std::vector<Ciphertext<DCRTPoly>> dec_values(nr_class*(nr_class-1)/2);
+
+    //  kvalue[i] = dot(x,model->SV[i],model->param,blas_functions);
+    std::vector<Ciphertext<DCRTPoly>> kvalue(trainN);
+    for (size_t i = 0; i < trainN; ++i) {
+        for (size_t x=0; x < sizeF; x++){
+            auto temp = cc->EvalMult(X[x][i],SV[x][i]);
+            kvalue[i] = cc->EvalAdd(kvalue[i],temp);
+        }
+        kvalue[i] = cc->ModReduce(kvalue[i]);
+    }
+
+
+//
+//    predict_values(model, x, dec_values, blas_functions);
+//
+//    double min_prob=1e-7;
+//    double **pairwise_prob=Malloc(double *,nr_class);
+//    for(i=0;i<nr_class;i++)
+//        pairwise_prob[i]=Malloc(double,nr_class);
+//    int k=0;
+//    for(i=0;i<nr_class;i++)
+//        for(int j=i+1;j<nr_class;j++)
+//        {
+//            pairwise_prob[i][j]=min(max(sigmoid_predict(dec_values[k],model->probA[k],model->probB[k]),min_prob),1-min_prob);
+//            pairwise_prob[j][i]=1-pairwise_prob[i][j];
+//            k++;
+//        }
+//    multiclass_probability(nr_class,pairwise_prob,prob_estimates);
 
 
 

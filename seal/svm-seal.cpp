@@ -64,8 +64,8 @@ void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
  * @return nothing.
  * @note This functions assumes file does not have header line.
  */
-
-void ReadVectorFile(std::vector<double> & dataColumn,
+template <class T>
+void ReadVectorFile(std::vector<T> & dataColumn,
                     string dataFileName, size_t M)
 {
 
@@ -79,7 +79,7 @@ void ReadVectorFile(std::vector<double> & dataColumn,
     for(uint32_t i = 0; i < M && file.good(); i++) {
         getline(file, line);
         stringstream ss(line);
-        double val;
+        T val;
         ss >> val;
         dataColumn.push_back(val);
     }
@@ -101,18 +101,24 @@ int main(){
     std::vector< std::vector<double>> svData;
     std::vector< std::vector<double>> svCoefData;
 
-    string xFilename = "../data/XScaled";
-    string yFilename = "../data/Y";
-    string svFilename = "../data/SV";
-    string svCoefFilename = "../data/sv_coef";
+    std::vector<int> svIndex;
+    std::vector<int> svClass;
 
-    // TODO: Define N for test and train separately
-    size_t N = 270;
+    size_t trainN = 268; // how many sample used for training
+    size_t testN = 268;  // how many sample for predicting
     size_t M = 1000;
-    size_t n_classes = 10;
-    ReadMatrixFile(xData, xFilename,N,M);
-    ReadVectorFile(yData,yFilename, N);
-    ReadMatrixFile(svData, svFilename,N,M);
-    ReadMatrixFile(svCoefData, svCoefFilename,n_classes,N);
+    size_t nr_class = 11;
+
+    //Test Data
+    ReadMatrixFile(xData, "../data/XScaled",testN,M);
+    ReadVectorFile(yData,"../data/Y", testN);
+
+    // Precomputed Trained Data
+    ReadMatrixFile(svData, "../data/SV",trainN,M);
+    ReadMatrixFile(svCoefData, "../data/sv_coef", nr_class-1, trainN);
+
+    //Support Vector Indices for Trained Model
+    ReadVectorFile(svIndex,"../data/SV_index",trainN);
+    ReadVectorFile(svClass,"../data/SV_class",nr_class);
     return 0;
 }

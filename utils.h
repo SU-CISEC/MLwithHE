@@ -64,8 +64,8 @@ void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
  * @return nothing.
  * @note This functions assumes file does not have header line.
  */
-
-void ReadVectorFile(std::vector<double> & dataColumn,
+template <class T>
+void ReadVectorFile(std::vector<T> & dataColumn,
                     string dataFileName, size_t M)
 {
 
@@ -79,7 +79,7 @@ void ReadVectorFile(std::vector<double> & dataColumn,
     for(uint32_t i = 0; i < M && file.good(); i++) {
         getline(file, line);
         stringstream ss(line);
-        double val;
+        T val;
         ss >> val;
         dataColumn.push_back(val);
     }

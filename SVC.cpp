@@ -379,3 +379,21 @@ struct svm_model *set_model(struct svm_parameter *param, int nr_class,
 
 
 
+double Kernel::dot(const PREFIX(node) *px, const PREFIX(node) *py, BlasFunctions *blas_functions) {
+    double sum = 0;
+
+    while(px->index != -1 && py->index != -1) {
+        if(px->index == py->index) {
+            sum += px->value * py->value;
+            ++px;
+            ++py;
+        }
+        else {
+            if(px->index > py->index)
+                ++py;
+            else
+                ++px;
+        }
+    }
+    return sum;
+}
