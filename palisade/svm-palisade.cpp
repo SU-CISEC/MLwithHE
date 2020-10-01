@@ -6,6 +6,7 @@
 
 void assignDataToSlots(vector<vector<std::vector<std::complex<double>>>> &arrayData, std::vector<std::vector<double>> data,
                        size_t n_array, usint m);
+Ciphertext<DCRTPoly> BinaryTreeAdd(std::vector<Ciphertext<DCRTPoly>> &vector);
 
 int main(int argc, char **argv) {
 
@@ -134,31 +135,15 @@ int main(int argc, char **argv) {
 
     //  kvalue[i] = dot(x,model->SV[i],model->param,blas_functions);
     std::vector<Ciphertext<DCRTPoly>> kvalue(trainN);
+//#pragma omp parallel for
     for (size_t i = 0; i < trainN; ++i) {
+        std::vector<Ciphertext<DCRTPoly>> temp(sizeF);
         for (size_t x=0; x < sizeF; x++){
-            auto temp = cc->EvalMult(X[x][i],SV[x][i]);
-            kvalue[i] = cc->EvalAdd(kvalue[i],temp);
+            temp[i] = cc->EvalMult(X[x][i],SV[x][i]);
         }
+        kvalue[i] = BinaryTreeAdd(temp);
         kvalue[i] = cc->ModReduce(kvalue[i]);
     }
-
-
-//
-//    predict_values(model, x, dec_values, blas_functions);
-//
-//    double min_prob=1e-7;
-//    double **pairwise_prob=Malloc(double *,nr_class);
-//    for(i=0;i<nr_class;i++)
-//        pairwise_prob[i]=Malloc(double,nr_class);
-//    int k=0;
-//    for(i=0;i<nr_class;i++)
-//        for(int j=i+1;j<nr_class;j++)
-//        {
-//            pairwise_prob[i][j]=min(max(sigmoid_predict(dec_values[k],model->probA[k],model->probB[k]),min_prob),1-min_prob);
-//            pairwise_prob[j][i]=1-pairwise_prob[i][j];
-//            k++;
-//        }
-//    multiclass_probability(nr_class,pairwise_prob,prob_estimates);
 
 
 
@@ -183,5 +168,21 @@ void assignDataToSlots(vector<vector<std::vector<std::complex<double>>>> &arrayD
             arrayData[counter][i][j%(m/4)] = data[i][j];
         }
     }
+
+}
+Ciphertext<DCRTPoly> BinaryTreeAdd(std::vector<Ciphertext<DCRTPoly>> &vector) {
+
+    auto cc = vector[0]->GetCryptoContext();
+
+    for(size_t j = 1; j < vector.size(); j=j*2) {
+        for(size_t i = 0; i<vector.size(); i = i + 2*j) {
+            if ((i+j)<vector.size())
+                vector[i] = cc->EvalAdd(vector[i],vector[i+j]);
+        }
+    }
+
+    Ciphertext<DCRTPoly> result(new CiphertextImpl<DCRTPoly>(*(vector[0])));
+
+    return result;
 
 }

@@ -91,7 +91,78 @@ void ReadVectorFile(std::vector<T> & dataColumn,
     std::cout << dataFileName << std::endl;
 }
 
+double dot(vector<double> px, vector<double> py) {
+    double sum = 0;
+    int i = 0;
+    int j = 0;
+    while(i != px.size() && j != py.size()) {
+        if(i == j) {
+            sum += px[i] * py[j];
+            ++i;
+            ++j;
+        }
+        else {
+            if(i > j)
+                ++j;
+            else
+                ++i;
+        }
+    }
+    return sum;
+}
 
+double predict_values(int l, vector<vector<double>> SV,vector<vector<double>> sv_coef, vector<int>nSV, vector<double> rho, vector<double> x, vector<double> &dec_values)
+{
+    int i;
+    int nr_class = 11;
+    vector<double> kvalue(l);
+    for(i=0;i<l;i++)
+        kvalue[i] = dot(x,SV[i]);
+
+    vector<int> start(nr_class);
+    start[0] = 0;
+    for(i=1;i<nr_class;i++)
+        start[i] = start[i-1]+nSV[i-1];
+
+    vector<int> vote(nr_class);
+    for(i=0;i<nr_class;i++)
+        vote[i] = 0;
+
+    int p=0;
+    for(i=0;i<nr_class;i++)
+        for(int j=i+1;j<nr_class;j++)
+        {
+            double sum = 0;
+            int si = start[i];
+            int sj = start[j];
+            int ci = nSV[i];
+            int cj = nSV[j];
+
+            int k;
+            vector<double> coef1 = sv_coef[j-1];
+            vector<double> coef2 = sv_coef[i];
+            for(k=0;k<ci;k++)
+                sum += coef1[si+k] * kvalue[si+k];
+            for(k=0;k<cj;k++)
+                sum += coef2[sj+k] * kvalue[sj+k];
+            sum -= rho[p];
+            dec_values[p] = sum;
+
+            if(dec_values[p] > 0)
+                ++vote[i];
+            else
+                ++vote[j];
+            p++;
+        }
+
+    int vote_max_idx = 0;
+    for(i=1;i<nr_class;i++)
+        if(vote[i] > vote[vote_max_idx])
+            vote_max_idx = i;
+
+    return vote_max_idx;
+
+}
 
 int main(){
     //// DATA READ
@@ -100,25 +171,37 @@ int main(){
     std::vector< std::vector<double>> xData;
     std::vector< std::vector<double>> svData;
     std::vector< std::vector<double>> svCoefData;
+    std::vector<double> svRho;
 
     std::vector<int> svIndex;
     std::vector<int> svClass;
 
-    size_t trainN = 268; // how many sample used for training
-    size_t testN = 268;  // how many sample for predicting
+    size_t trainN = 271; // how many sample used for training
+    size_t testN = 272;  // how many sample for predicting
     size_t M = 1000;
     size_t nr_class = 11;
+    size_t dual_class = (nr_class * (nr_class - 1))/2;
 
     //Test Data
     ReadMatrixFile(xData, "../data/XScaled",testN,M);
-    ReadVectorFile(yData,"../data/Y", testN);
+    ReadVectorFile(yData,"../data/Y_test", testN);
 
     // Precomputed Trained Data
     ReadMatrixFile(svData, "../data/SV",trainN,M);
     ReadMatrixFile(svCoefData, "../data/sv_coef", nr_class-1, trainN);
+    ReadVectorFile(svRho,"../data/rho",dual_class);
 
     //Support Vector Indices for Trained Model
     ReadVectorFile(svIndex,"../data/SV_index",trainN);
     ReadVectorFile(svClass,"../data/SV_class",nr_class);
+
+    vector<double> dec_values(dual_class);
+    for(int i = 0; i<testN; i++){
+        int predict_in_c = predict_values(trainN, svData,svCoefData,svClass,svRho,xData[i],dec_values);
+        cout << "i= "<< i <<", Predicted in C++: " << predict_in_c << ", Predicted in Python: "<< yData[i] << endl;
+    }
+    for(int i = 0; i<dual_class; i++)
+        cout << "Decision Value["<< i <<"]= " << dec_values[i] << endl;
+
     return 0;
 }
