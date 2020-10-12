@@ -160,6 +160,10 @@ double predict_values(int l, vector<vector<double>> SV,vector<vector<double>> sv
         if(vote[i] > vote[vote_max_idx])
             vote_max_idx = i;
 
+    kvalue.clear();
+    dec_values.clear();
+    vote.clear();
+
     return vote_max_idx;
 
 }
@@ -176,7 +180,7 @@ int main(){
     std::vector<int> svIndex;
     std::vector<int> svClass;
 
-    size_t trainN = 271; // how many sample used for training
+    size_t trainN = 263; // how many sample used for training
     size_t testN = 272;  // how many sample for predicting
     size_t M = 1000;
     size_t nr_class = 11;
