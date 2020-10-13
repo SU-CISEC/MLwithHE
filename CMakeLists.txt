@@ -58,3 +58,4 @@ SET(CMAKE_C_FLAGS_DEBUG "-D_DEBUG")
 ### PALISADE EXECUTABLES
 #add_executable( svm-palisade palisade/svm-palisade.cpp)
 add_executable( svm-seal seal/svm-seal.cpp)
+add_executable( svmOVR seal/svmWithOVR.cpp)

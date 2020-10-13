@@ -156,10 +156,11 @@ double predict_values(int l, vector<vector<double>> SV,vector<vector<double>> sv
         }
 
     int vote_max_idx = 0;
-    for(i=1;i<nr_class;i++)
+    for(i=1;i<nr_class;i++){
         if(vote[i] > vote[vote_max_idx])
             vote_max_idx = i;
-
+    }
+    start.clear();
     kvalue.clear();
     dec_values.clear();
     vote.clear();
@@ -202,6 +203,7 @@ int main(){
     vector<double> dec_values(dual_class);
     for(int i = 0; i<testN; i++){
         int predict_in_c = predict_values(trainN, svData,svCoefData,svClass,svRho,xData[i],dec_values);
+        dec_values.clear();
         cout << "i= "<< i <<", Predicted in C++: " << predict_in_c << ", Predicted in Python: "<< yData[i] << endl;
     }
     for(int i = 0; i<dual_class; i++)
