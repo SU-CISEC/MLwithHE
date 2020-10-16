@@ -17,28 +17,20 @@ int main(int argc, char **argv) {
 
     std::vector<double> yData;
     std::vector< std::vector<double>> xData;
-    std::vector< std::vector<double>> svData;
-    std::vector< std::vector<double>> svCoefData;
+    std::vector< std::vector<double>> coefData;
+    std::vector<double> rhoData;
 
-    std::vector<int> svIndex;
-    std::vector<int> svClass;
 
-    size_t trainN = 268; // how many sample used for training
-    size_t testN = 268;  // how many sample for predicting
+    size_t testN = 272;  // how many sample for predicting
     size_t M = 1000;
     size_t nr_class = 11;
-
     //Test Data
-    ReadMatrixFile(xData, "../data/XScaled",testN,M);
+    ReadMatrixFile(xData, "../data/XScaled", testN, M);
     ReadVectorFile(yData,"../data/Y", testN);
 
     // Precomputed Trained Data
-    ReadMatrixFile(svData, "../data/SV",trainN,M);
-    ReadMatrixFile(svCoefData, "../data/sv_coef", nr_class-1, trainN);
-
-    //Support Vector Indices for Trained Model
-    ReadVectorFile(svIndex,"../data/SV_index",trainN);
-    ReadVectorFile(svClass,"../data/SV_class",nr_class);
+    ReadMatrixFile(coefData, "../data/coef",nr_class,M);
+    ReadVectorFile(rhoData, "../data/rho", nr_class);
 
     //// KEY GENERATION
 //    double scalingFactor = 5e-1;
@@ -76,29 +68,22 @@ int main(int argc, char **argv) {
 
     //// ENCODE and ENCRYPTION
     size_t sizeF = (size_t)std::ceil((double)xData[0].size() / (m / 4));
-    size_t sizeC = (size_t)std::ceil((double)svCoefData[0].size() / (m / 4));
 
     std::vector<std::vector<std::vector<std::complex<double>>>> xDataArray(sizeF);
-    std::vector<std::vector<std::vector<std::complex<double>>>> svDataArray(sizeF);
-    std::vector<std::vector<std::vector<std::complex<double>>>> svCoefDataArray(sizeC);
+    std::vector<std::vector<std::vector<std::complex<double>>>> coefDataArray(sizeF);
 
     // Divide data into matrix to fit inside to slot size = n/2
     assignDataToSlots(xDataArray, xData , sizeF, m);
-    assignDataToSlots(svDataArray, svData , sizeF, m);
-    assignDataToSlots(svCoefDataArray, svCoefData , sizeF, m);
+    assignDataToSlots(coefDataArray, coefData , sizeF, m);
 
 
     std::vector<std::vector<Ciphertext<DCRTPoly>>> X(sizeF);
-    std::vector<std::vector<Ciphertext<DCRTPoly>>> SV(sizeF);
-    std::vector<std::vector<Ciphertext<DCRTPoly>>> C(sizeC);
-    std::vector<Ciphertext<DCRTPoly>> Y(testN);
+    std::vector<std::vector<Plaintext>> W(sizeF);
+    std::vector<Plaintext> B(nr_class);
 
     for (size_t i = 0; i < sizeF; i++) {
         X[i] = std::vector<Ciphertext<DCRTPoly>>(testN);
-        SV[i] = std::vector<Ciphertext<DCRTPoly>>(trainN);
-    }
-    for (size_t i = 0; i < sizeC; ++i) {
-        C[i] = std::vector<Ciphertext<DCRTPoly>>(nr_class);
+        W[i] = std::vector<Plaintext>(nr_class);
     }
 
 
@@ -108,41 +93,34 @@ int main(int argc, char **argv) {
             Plaintext xTemp = cc->MakeCKKSPackedPlaintext(xDataArray[x][i]);
             X[x][i] = cc->Encrypt(keyPair.publicKey, xTemp);
         }
-        Plaintext sTemp2 = cc->MakeCKKSPackedPlaintext(std::vector<std::complex<double>>(m/4,yData[i]));
-        Y[i] = cc->Encrypt(keyPair.publicKey, sTemp2);
     }
-    cout << "X and Y encrypted." << endl;
+    cout << "X is encrypted." << endl;
 //#pragma omp parallel for
-    for (size_t i = 0; i < trainN; ++i) {
+    for (size_t i = 0; i < nr_class; ++i) {
         for (size_t x=0; x < sizeF; x++){
-            Plaintext svTemp = cc->MakeCKKSPackedPlaintext(svDataArray[x][i]);
-            SV[x][i] = cc->Encrypt(keyPair.publicKey, svTemp);
+            W[x][i] = cc->MakeCKKSPackedPlaintext(coefDataArray[x][i]);
+            W[x][i]->SetFormat(EVALUATION);
+//            W[x][i] = cc->Encrypt(keyPair.publicKey, wTemp);
         }
+        B[i] = cc->MakeCKKSPackedPlaintext(std::vector<std::complex<double>>(m/4,rhoData[i]));
     }
-    cout << "SV encrypted." << endl;
+    cout << "W is packed." << endl;
 
-//#pragma omp parallel for
-    for (size_t i = 0; i < nr_class-1; ++i) {
-        for (size_t x=0; x < sizeC; x++){
-            Plaintext cTemp = cc->MakeCKKSPackedPlaintext(svCoefDataArray[x][i]);
-            C[x][i] = cc->Encrypt(keyPair.publicKey, cTemp);
-        }
-    }
-    cout << "C encrypted." << endl;
     //// SVM OPERATIONS
 
-    std::vector<Ciphertext<DCRTPoly>> dec_values(nr_class*(nr_class-1)/2);
+    std::vector<Ciphertext<DCRTPoly>> dec_values(nr_class);
 
-    //  kvalue[i] = dot(x,model->SV[i],model->param,blas_functions);
-    std::vector<Ciphertext<DCRTPoly>> kvalue(trainN);
 //#pragma omp parallel for
-    for (size_t i = 0; i < trainN; ++i) {
+    for (size_t i = 0; i < nr_class; ++i) {
         std::vector<Ciphertext<DCRTPoly>> temp(sizeF);
         for (size_t x=0; x < sizeF; x++){
-            temp[i] = cc->EvalMult(X[x][i],SV[x][i]);
+            temp[x] = cc->EvalMult(X[x][0],W[x][i]);
+//            temp[x] = cc->EvalSum(temp[i],m/4);
         }
-        kvalue[i] = BinaryTreeAdd(temp);
-        kvalue[i] = cc->ModReduce(kvalue[i]);
+
+//        dec_values[i] = BinaryTreeAdd(temp);
+//        dec_values[i] = cc->ModReduce(dec_values[i]);
+//        dec_values[i] = cc->EvalAdd(dec_values[i], rhoData[i]);
     }
 
 
