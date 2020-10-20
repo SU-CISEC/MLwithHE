@@ -112,7 +112,6 @@ int main(){
     size_t testN = 272;  // how many sample for predicting
     size_t M = 1000;
     size_t nr_class = 11;
-    size_t dual_class = (nr_class * (nr_class - 1))/2;
 
     //Test Data
     ReadMatrixFile(xData, "../data/X_test",testN,M);
@@ -123,11 +122,12 @@ int main(){
     ReadVectorFile(Rho,"../data/rho",nr_class);
 
 
-    for (int j = 0; j < testN; ++j) {
+    for (int j = 0; j < 10; ++j) {
         vector<double> dec_values(nr_class);
         for(int i = 0; i<nr_class; i++){
             dec_values[i] = dot(xData[j],coefData[i]);
             dec_values[i] += Rho[i];
+            cout << "Dec_value["<< i << "]= " << dec_values[i] << std::endl;
         }
         auto it = max_element(dec_values.begin(), dec_values.end());
 //        cout << "MaxElement= " << *it <<" and its Label=" << << endl;

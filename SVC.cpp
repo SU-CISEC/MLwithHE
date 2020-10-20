@@ -1,7 +1,6 @@
 /**
  * REFERENCE functions which are taken from libsvm library.()
  */
-#include "utils.h"
 /*
  Attributes
     ----------
