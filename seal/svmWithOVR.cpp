@@ -109,20 +109,22 @@ int main(){
     std::vector< std::vector<double>> coefData;
     std::vector<double> Rho;
 
-    size_t testN = 272;  // how many sample for predicting
-    size_t M = 1000;
+    size_t testN = 2713;  // how many sample for predicting
+    size_t M = 141;
     size_t nr_class = 11;
 
+
+
     //Test Data
-    ReadMatrixFile(xData, "../data/X_test",testN,M);
-    ReadVectorFile(yData,"../data/Y_pred", testN);
+    ReadMatrixFile(xData, "../data/feature141/X_test", testN, M);
+    ReadVectorFile(yData,"../data/feature141/Y_test", testN);
 
     // Precomputed Trained Data
-    ReadMatrixFile(coefData, "../data/coef", nr_class, M);
-    ReadVectorFile(Rho,"../data/rho",nr_class);
+    ReadMatrixFile(coefData, "../data/feature141/coef",nr_class,M);
+    ReadVectorFile(Rho,"../data/feature141/rho",nr_class);
 
-
-    for (int j = 0; j < 10; ++j) {
+    int count_comp = 0;
+    for (int j = 0; j < testN; ++j) {
         vector<double> dec_values(nr_class);
         for(int i = 0; i<nr_class; i++){
             dec_values[i] = dot(xData[j],coefData[i]);
@@ -131,10 +133,12 @@ int main(){
         }
         auto it = max_element(dec_values.begin(), dec_values.end());
 //        cout << "MaxElement= " << *it <<" and its Label=" << << endl;
-        cout << "i= "<< j <<", Predicted in C++: " << it - dec_values.begin() << ", Predicted in Python: "<< yData[j] << endl;
+//        cout << "i= "<< j <<", Predicted in C++: " << it - dec_values.begin() << ", Predicted in Python: "<< yData[j] << endl;
+        if((it - dec_values.begin()) == yData[j])
+            count_comp +=1;
         dec_values.clear();
     }
-
+    cout << "Count in Palisade vs Python: "<< count_comp << endl;
 
 //    for(int i = 0; i<nr_class; i++)
 //        cout << "Decision Value["<< i <<"]= " << dec_values[i] << endl;

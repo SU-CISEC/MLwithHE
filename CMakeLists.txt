@@ -53,5 +53,5 @@ link_libraries( ${PALISADE_LIBRARIES} )
 
 ## PALISADE EXECUTABLES
 add_executable( svm-palisade palisade/svm-palisade.cpp)
-add_executable( svm-seal seal/svm-seal.cpp)
-add_executable( svmOVR seal/svmWithOVR.cpp)
+#add_executable( svm-seal seal/svm-seal.cpp)
+#add_executable( svmOVR seal/svmWithOVR.cpp)

@@ -1,4 +1,8 @@
 //
+// Created by ferhat yaman on 26.10.2020.
+//
+
+//
 // Created by Ferhat Yaman on 26.09.2020.
 //
 
@@ -21,7 +25,7 @@ using namespace lbcrypto;
  * @return nothing.
  * @note This functions assumes file does not have header line.
  */
-void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
+void ReadMatrixFile(std::vector<std::vector<complex<double>>> & dataColumns,
                     string dataFileName, size_t N, size_t M)
 {
 
@@ -37,7 +41,7 @@ void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
         getline(file, line);
 //        uint32_t curCols = std::count(line.begin(), line.end(), ',');
         stringstream ss(line);
-        std::vector<double> row(M);
+        std::vector<complex<double>> row(M);
         for(uint32_t i = 0; i < M; i++) {
             string substr;
             getline(ss, substr, ',');
@@ -96,8 +100,6 @@ void assignDataToSlots(vector<vector<std::vector<std::complex<double>>>> &arrayD
                        size_t n_array, usint m);
 Ciphertext<DCRTPoly> BinaryTreeAdd(std::vector<Ciphertext<DCRTPoly>> &vector);
 
-void print_results(vector<vector<double>> res);
-
 void softmax(vector<double> & temp){
     int sum = 0;
     for (size_t i = 0; i < temp.size(); ++i)
@@ -124,9 +126,9 @@ int main(int argc, char **argv) {
 
     //// DATA READ
 
-    std::vector<double> yData,yTrue;
-    std::vector< std::vector<double>> xData;
-    std::vector< std::vector<double>> coefData;
+    std::vector<complex<double>> yData,yTrue;
+    std::vector< std::vector<complex<double>>> xData;
+    std::vector< std::vector<complex<double>>> coefData;
     std::vector<double> rhoData;
 
 
@@ -144,31 +146,30 @@ int main(int argc, char **argv) {
 
     //// KEY GENERATION
     TIC(t);
-//    double scalingFactor = 5e-1;
     uint32_t multDepth = 1;
-    uint32_t scaleFactorBits = 20;
+    uint32_t scaleFactorBits = 30;
 
     SecurityLevel securityLevel = HEStd_128_classic;
     // 0 means the library will choose it based on securityLevel
-    uint32_t m = 2048;
+    uint32_t m = 8192;
     uint32_t batchSize = 256;
 
-//    CryptoContext<DCRTPoly> cc =
-//            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(
-//                    multDepth, scaleFactorBits, batchSize, securityLevel, m);
     CryptoContext<DCRTPoly> cc =
-            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(multDepth,
-                                                                 scaleFactorBits,
-                                                                 batchSize,
-                                                                 securityLevel,
-                                                                 m,
-                                                                 EXACTRESCALE,
-                                                                 BV,
-                                                                 1,
-                                                                 2,
-                                                                 20,
-                                                                 0,
-                                                                 SPARSE);
+            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(
+                    multDepth, scaleFactorBits, batchSize, securityLevel, m);
+//    CryptoContext<DCRTPoly> cc =
+//            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(multDepth,
+//                                                                 scaleFactorBits,
+//                                                                 batchSize,
+//                                                                 securityLevel,
+//                                                                 m,
+//                                                                 EXACTRESCALE,
+//                                                                 BV,
+//                                                                 1,
+//                                                                 2,
+//                                                                 30,
+//                                                                 0,
+//                                                                 OPTIMIZED);
 
     cc->Enable(ENCRYPTION);
     cc->Enable(SHE);
@@ -184,32 +185,19 @@ int main(int argc, char **argv) {
     keyGenTime = TOC(t);
     //// ENCODE and ENCRYPTION
     TIC(t);
-    size_t sizeF = (size_t)std::ceil((double)xData[0].size() / (m / 4));
-
-    std::vector<std::vector<std::vector<std::complex<double>>>> xDataArray(sizeF);
-    std::vector<std::vector<std::vector<std::complex<double>>>> coefDataArray(sizeF);
-
-    // Divide data into matrix to fit inside to slot size = n/2
-    assignDataToSlots(xDataArray, xData , sizeF, m);
-    assignDataToSlots(coefDataArray, coefData , sizeF, m);
 
 
-    std::vector<std::vector<Ciphertext<DCRTPoly>>> X(sizeF);
-    std::vector<std::vector<Plaintext>> W(sizeF);
+    std::vector<Ciphertext<DCRTPoly>> X(testN);
+    std::vector<Plaintext> W(nr_class);
     std::vector<Plaintext> B(nr_class);
-
-    for (size_t i = 0; i < sizeF; i++) {
-        X[i] = std::vector<Ciphertext<DCRTPoly>>(testN);
-        W[i] = std::vector<Plaintext>(nr_class);
-    }
 
 
 #pragma omp parallel for
     for (size_t i=0; i<testN; i++){
-        for (size_t x=0; x < sizeF; x++){
-            Plaintext xTemp = cc->MakeCKKSPackedPlaintext(xDataArray[x][i]);
-            X[x][i] = cc->Encrypt(keyPair.publicKey, xTemp);
-        }
+
+        Plaintext xTemp = cc->MakeCKKSPackedPlaintext(xData[i]);
+        X[i] = cc->Encrypt(keyPair.publicKey, xTemp);
+
     }
     cout << "X is encrypted." << endl;
 #pragma omp parallel for
@@ -253,22 +241,18 @@ int main(int argc, char **argv) {
     int count_python = 0;
     int count_palisade = 0;
 
-    vector<vector<double>> results(testN);
-    for (uint32_t i = 0; i < nr_class; ++i)
-        results[i] = vector<double>(nr_class);
-
 #pragma omp parallel for
     for (size_t s = 0; s < testN; ++s) {
-        Plaintext result_dec_values;
+        vector<Plaintext> result_dec_values(nr_class);
         vector<double> temp;
         for (size_t i = 0; i < nr_class; ++i) {
-            cc->Decrypt(keyPair.secretKey, dec_values[s][i], &result_dec_values);
-            result_dec_values->SetLength(1);
-            auto value = result_dec_values->GetCKKSPackedValue();
+            cc->Decrypt(keyPair.secretKey, dec_values[s][i], &result_dec_values[i]);
+            result_dec_values[i]->SetLength(1);
+            auto value = result_dec_values[i]->GetCKKSPackedValue();
             temp.push_back(value[0].real());
-            results[s][i] = value[0].real();
+//            cout << temp[i] << endl;
         }
-//        softmax(temp);
+        softmax(temp);
         auto it = max_element(temp.begin(), temp.end());
 //        cout << "Max Element = " << *it << endl;
 //        cout << "s= "<< s <<", Predicted in Palisade: " << it - temp.begin() << ", Predicted in Python: "<< yData[s] << ", True Value of Sample: "<< yTrue[s] << endl;
@@ -280,7 +264,6 @@ int main(int argc, char **argv) {
             count_python +=1;
         temp.clear();
     }
-    print_results(results);
 
     cout << "Count in Palisade vs Python: "<< count_comp << endl;
     cout << "Count in Palisade vs True: "<< count_palisade << endl;
@@ -297,29 +280,6 @@ int main(int argc, char **argv) {
 
 
     return 0;
-}
-
-void print_results(vector<vector<double>> res) {
-    string fileName =  "../data/feature141/results.csv";
-
-    std::cerr << "file name = " << fileName << std::endl;
-
-    ofstream file(fileName);
-    file.precision(8);
-    uint32_t M = res.size();
-    uint32_t nr_class = res[0].size();
-    size_t counter = 0;
-    while((file.good()) && (counter < M)) {
-        for(uint32_t i = 0; i < nr_class-1; i++) {
-            file << res[counter][i] << ',';
-        }
-        file << res[counter][nr_class-1] << "\n";
-        counter++;
-    }
-
-    file.close();
-
-    std::cout << "Read in data: " << fileName << std::endl;
 }
 
 void assignDataToSlots(vector<vector<std::vector<std::complex<double>>>> &arrayData, std::vector<std::vector<double>> data,
