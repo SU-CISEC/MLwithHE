@@ -1,2 +1,4 @@
 .idea
 cmake-build-*
+data/feature141/X.npy
+data/feature141/Y.npy
