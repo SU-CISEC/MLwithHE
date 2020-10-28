@@ -83,8 +83,8 @@ void ReadVectorFile(std::vector<T> & dataColumn,
 
 double dot(vector<double> px, vector<double> py) {
     double sum = 0;
-    int i = 0;
-    int j = 0;
+    size_t i = 0;
+    size_t j = 0;
     while(i != px.size() && j != py.size()) {
         if(i == j) {
             sum += px[i] * py[j];
@@ -124,12 +124,12 @@ int main(){
     ReadVectorFile(Rho,"../data/feature141/rho",nr_class);
 
     int count_comp = 0;
-    for (int j = 0; j < testN; ++j) {
+    for (size_t j = 0; j < testN; ++j) {
         vector<double> dec_values(nr_class);
-        for(int i = 0; i<nr_class; i++){
+        for(size_t i = 0; i<nr_class; i++){
             dec_values[i] = dot(xData[j],coefData[i]);
             dec_values[i] += Rho[i];
-            cout << "Dec_value["<< i << "]= " << dec_values[i] << std::endl;
+//            cout << "Dec_value["<< i << "]= " << dec_values[i] << std::endl;
         }
         auto it = max_element(dec_values.begin(), dec_values.end());
 //        cout << "MaxElement= " << *it <<" and its Label=" << << endl;

@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
     //// DATA READ
 
-    std::vector<double> yData,yTrue;
+    std::vector<double> yTrue;
     std::vector< std::vector<double>> xData;
     std::vector< std::vector<double>> coefData;
     std::vector<double> rhoData;
@@ -135,7 +135,6 @@ int main(int argc, char **argv) {
     size_t nr_class = 11;
     //Test Data
     ReadMatrixFile(xData, "../data/feature141/X_test", testN, M);
-    ReadVectorFile(yData,"../data/finalData/Y_pred", testN);
     ReadVectorFile(yTrue,"../data/feature141/Y_test", testN);
 
     // Precomputed Trained Data
@@ -249,8 +248,6 @@ int main(int argc, char **argv) {
     computationTime = TOC(t);
     //// DECRYPTION
     TIC(t);
-    int count_comp = 0;
-    int count_python = 0;
     int count_palisade = 0;
 
     vector<vector<double>> results(testN);
@@ -272,21 +269,16 @@ int main(int argc, char **argv) {
         auto it = max_element(temp.begin(), temp.end());
 //        cout << "Max Element = " << *it << endl;
 //        cout << "s= "<< s <<", Predicted in Palisade: " << it - temp.begin() << ", Predicted in Python: "<< yData[s] << ", True Value of Sample: "<< yTrue[s] << endl;
-        if((it - temp.begin()) == yData[s])
-            count_comp +=1;
+
         if((it - temp.begin()) == yTrue[s])
             count_palisade +=1;
-        if(yData[s] == yTrue[s])
-            count_python +=1;
         temp.clear();
     }
-    print_results(results);
-
-    cout << "Count in Palisade vs Python: "<< count_comp << endl;
-    cout << "Count in Palisade vs True: "<< count_palisade << endl;
-    cout << "Count in Python vs True: "<< count_python << endl;
-
     decryptionTime = TOC(t);
+
+    print_results(results);
+    cout << "Count in Palisade vs True: "<< count_palisade << endl;
+
     cout << "\nKey Generation Time: \t\t" << keyGenTime/1000 << " s" << endl;
     cout << "Encoding and Encryption Time: \t" << encryptionTime/1000 << " s" << endl;
     cout << "Computation Time: \t\t" << computationTime/1000 << " s" << endl;
