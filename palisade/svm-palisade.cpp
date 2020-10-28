@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     std::vector<double> rhoData;
 
 
-    size_t testN = 1000;  // how many sample for predicting
+    size_t testN = 2713;  // how many sample for predicting
     size_t M = 141;
     size_t nr_class = 11;
     //Test Data
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     int count_palisade = 0;
 
     vector<vector<double>> results(testN);
-    for (uint32_t i = 0; i < nr_class; ++i)
+    for (uint32_t i = 0; i < testN; ++i)
         results[i] = vector<double>(nr_class);
 
 #pragma omp parallel for
