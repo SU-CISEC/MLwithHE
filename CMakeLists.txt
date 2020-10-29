@@ -37,6 +37,6 @@ link_directories( ${OPENMP_LIBRARIES} )
 link_libraries( ${PALISADE_LIBRARIES} )
 
 ## PALISADE EXECUTABLES
-add_executable(svm-palisade svm-palisade.cpp)
+add_executable(svm-palisade svm-HE-test.cpp)
 add_executable(svm-HE svm-HE.cpp)
-add_executable( svmOVR svmWithOVR.cpp)
+add_executable( svmOVR svm.cpp)

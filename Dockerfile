@@ -22,7 +22,6 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get update \
       gcc \
       g++ \
       gdb \
-      clang \
       rsync \
       tar \
       python \

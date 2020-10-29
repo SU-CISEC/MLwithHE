@@ -12,6 +12,8 @@ def micro_auc(y_test,y_score):
     fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
+    return roc_auc["micro"]
+
 
 def flat(Y):
     Y = np.asarray(Y,dtype='int8')
@@ -23,10 +25,14 @@ def flat(Y):
 
 # In[]:
 yy_true = np.load('Y.npy')
-yy_pred = yy_pred = np.loadtxt('results.csv', delimiter=',')
+yy_pred = np.loadtxt('results.csv', delimiter=',')
 
 # In[]:
-myauc = micro_auc(flat(yy_true), yy_pred)
+yy_true.shape
+# In[]:
+myauc = micro_auc(flat(yy_true)[0:1000,], yy_pred)
 
+# %%
+print(myauc)
 
-
+# %%

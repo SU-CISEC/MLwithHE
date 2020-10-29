@@ -134,12 +134,12 @@ int main(int argc, char **argv) {
     size_t M = 141;
     size_t nr_class = 11;
     //Test Data
-    ReadMatrixFile(xData, "../data/feature141/X_test", testN, M);
-    ReadVectorFile(yTrue,"../data/feature141/Y_test", testN);
+    ReadMatrixFile(xData, "../data/SampleData/X_test", testN, M);
+    ReadVectorFile(yTrue,"../data/SampleData/Y_test", testN);
 
     // Precomputed Trained Data
-    ReadMatrixFile(coefData, "../data/feature141/coef",nr_class,M);
-    ReadVectorFile(rhoData, "../data/feature141/rho", nr_class);
+    ReadMatrixFile(coefData, "../model/coef",nr_class,M);
+    ReadVectorFile(rhoData, "../model/rho", nr_class);
 
     //// KEY GENERATION
     TIC(t);
@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
 }
 
 void print_results(vector<vector<double>> res) {
-    string fileName =  "../data/feature141/results.csv";
+    string fileName =  "../data/SampleData/results.csv";
 
     std::cerr << "file name = " << fileName << std::endl;
 

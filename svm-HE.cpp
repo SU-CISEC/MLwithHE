@@ -9,24 +9,61 @@
 using namespace std;
 using namespace lbcrypto;
 
-
 /**
  * Read X test file values into a matrix.
  *
  * @param dataColumns Column vector where the data placed as row of double values.
+ * @param patientList Column vector where the data placed as row of string value.
  * @param dataFileName Path of the file
  * @param M Number of features
- * @param N Number of sample size
  * @return nothing.
  * @note This functions assumes file does not have header line.
  */
-void ReadMatrixFile(std::vector<std::vector<complex<double>>> & dataColumns,
-                    string dataFileName, size_t N, size_t M)
+void ReadTestData(vector<vector<complex<double>>> & dataColumns, vector<string> & patientList,string dataFileName, size_t M)
 {
+    string fileName = dataFileName + ".txt";
 
+    cerr << "file name = " << fileName << endl;
+
+    ifstream file(fileName);
+    string line;
+
+    while(file.good() && getline(file, line)) {
+        stringstream ss(line);
+
+        string substr;
+        getline(ss, substr, ' ');
+        patientList.push_back(substr);
+
+        vector<complex<double>> row(M);
+        for(uint32_t i = 0; i < M; i++) {
+            getline(ss, substr, ' ');
+            double val;
+            val = stod(substr);
+            row[i] = val;
+        }
+        dataColumns.push_back(row);
+    }
+
+    file.close();
+
+    cout << "Read in data: ";
+    cout << dataFileName << endl;
+}
+
+/**
+ * Read Coef model values into a matrix.
+ *
+ * @param dataColumns Column vector where the data placed as row of double values.
+ * @param dataFileName Path of the file
+ * @param M Number of features
+ * @param N Number of classes
+ * @return nothing.
+ * @note This functions assumes file does not have header line.
+ */
+void ReadMatrixFile(vector<vector<complex<double>>> & dataColumns, string dataFileName, size_t N, size_t M)
+{
     string fileName = dataFileName + ".csv";
-
-    std::cerr << "file name = " << fileName << std::endl;
 
     ifstream file(fileName);
     string line, value;
@@ -34,14 +71,13 @@ void ReadMatrixFile(std::vector<std::vector<complex<double>>> & dataColumns,
     size_t counter = 0;
     while((file.good()) && (counter < N)) {
         getline(file, line);
-//        uint32_t curCols = std::count(line.begin(), line.end(), ',');
         stringstream ss(line);
-        std::vector<complex<double>> row(M);
+        vector<complex<double>> row(M);
         for(uint32_t i = 0; i < M; i++) {
             string substr;
             getline(ss, substr, ',');
             double val;
-            val = std::stod(substr);
+            val = stod(substr);
             row[i] = val;
         }
         dataColumns.push_back(row);
@@ -50,14 +86,14 @@ void ReadMatrixFile(std::vector<std::vector<complex<double>>> & dataColumns,
 
     file.close();
 
-    std::cout << "Read in data: ";
-    std::cout << dataFileName << std::endl;
+    cout << "Read in data: ";
+    cout << dataFileName << endl;
 }
 
 /**
- * Read model parameters file values into different matrix or .
+ * Read model parameters file rho values into column vector.
  *
- * @param dataColumns Column vector where the data placed as row of double values.
+ * @param dataColumns Column vector where the data placed as row of double value.
  * @param dataFileName Path of the file
  * @param M Number of features
  * @param num_class Number of classes
@@ -65,13 +101,9 @@ void ReadMatrixFile(std::vector<std::vector<complex<double>>> & dataColumns,
  * @note This functions assumes file does not have header line.
  */
 template <class T>
-void ReadVectorFile(std::vector<T> & dataColumn,
-                    string dataFileName, size_t M)
+void ReadVectorFile(vector<T> & dataColumn, string dataFileName, size_t M)
 {
-
     string fileName = dataFileName + ".csv";
-
-    std::cerr << "file name = " << fileName << std::endl;
 
     ifstream file(fileName);
     string line;
@@ -84,34 +116,44 @@ void ReadVectorFile(std::vector<T> & dataColumn,
         dataColumn.push_back(val);
     }
 
-
     file.close();
 
-    std::cout << "Read in data: ";
-    std::cout << dataFileName << std::endl;
+    cout << "Read in data: ";
+    cout << dataFileName << endl;
 }
 
-void print_results(vector<vector<double>> res) {
-    string fileName =  "../data/feature141/results.csv";
+/**
+ * Print out result values into csv file.
+ *
+ * @param dataColumns Column vector which the data placed as row of double values.
+ * @param patientList Column vector where the data places as row of string value.
+ * @return nothing.
+ * @note This functions assumes file does not have header line.
+ */
+void print_results(vector<vector<double>> res, vector<string> patientList) {
+    string fileName =  "../data/results.csv";
 
-    std::cerr << "file name = " << fileName << std::endl;
+    uint32_t N = res.size();
+    uint32_t nr_class = res[0].size();
+    size_t counter = 0;
 
     ofstream file(fileName);
     file.precision(8);
-    uint32_t M = res.size();
-    uint32_t nr_class = res[0].size();
-    size_t counter = 0;
-    while((file.good()) && (counter < M)) {
-        for(uint32_t i = 0; i < nr_class-1; i++) {
+
+    file << "Patient-Id,Bronchusandlung,Bladder,Colon,Skin,Stomach,Corpusuteri,Liverandintrahepaticbileducts,Ovary,Kidney,Cervixuteri,Breast\n";
+    while((file.good()) && (counter < N)) {
+        file << patientList[counter] << ',';
+
+        for(uint32_t i = 0; i < nr_class-1; i++)
             file << res[counter][i] << ',';
-        }
+
         file << res[counter][nr_class-1] << "\n";
         counter++;
     }
 
     file.close();
 
-    std::cout << "Read in data: " << fileName << std::endl;
+    cout << "Print out data: " << fileName << endl;
 }
 
 int main(int argc, char **argv) {
@@ -128,26 +170,24 @@ int main(int argc, char **argv) {
     double endToEndTime(0.0);
 
 
-    cout << "\n======SVM PALISADE Solution========\n" << std::endl;
+    cout << "\n======SVM PALISADE Solution========\n" << endl;
 
     //// DATA READ
+    vector<string> patient_Ids;
+    vector<vector<complex<double>>> xData;
+    vector<vector<complex<double>>> coefData;
+    vector<double> rhoData;
 
-    std::vector<double> yTrue;
-    std::vector< std::vector<complex<double>>> xData;
-    std::vector< std::vector<complex<double>>> coefData;
-    std::vector<double> rhoData;
-
-
-    size_t testN = 1000;  // how many sample for predicting
     size_t M = 141;
     size_t nr_class = 11;
     //Test Data
-    ReadMatrixFile(xData, "../data/feature141/X_test", testN, M);
-    ReadVectorFile(yTrue,"../data/feature141/Y_test", testN);
+    ReadTestData(xData, patient_Ids, "../data/data.test", M);
 
     // Precomputed Trained Data
-    ReadMatrixFile(coefData, "../data/feature141/coef",nr_class,M);
-    ReadVectorFile(rhoData, "../data/feature141/rho", nr_class);
+    ReadMatrixFile(coefData, "../model/coef",nr_class,M);
+    ReadVectorFile(rhoData, "../model/rho", nr_class);
+
+    size_t testN = xData.size();  // how many sample for predicting
 
 //// KEY GENERATION
     TIC(t);
@@ -177,36 +217,35 @@ int main(int argc, char **argv) {
     cc->Enable(SHE);
     cc->Enable(LEVELEDSHE);
 
-    std::cout << "\nNumber of Samples = " << xData.size() << std::endl;
-    std::cout << "Number of Features = " << xData[0].size() << std::endl;
+    cout << "\nNumber of Samples = " << xData.size() << endl;
+    cout << "Number of Features = " << xData[0].size() << endl;
 
 
     auto keyPair = cc->KeyGen();
     cc->EvalMultKeysGen(keyPair.secretKey);
     cc->EvalSumKeyGen(keyPair.secretKey);
     keyGenTime = TOC(t);
+
     //// ENCODE and ENCRYPTION
     TIC(t);
 
 
-    std::vector<Ciphertext<DCRTPoly>> X(testN);
-    std::vector<Plaintext> W(nr_class);
-    std::vector<Plaintext> B(nr_class);
+    vector<Ciphertext<DCRTPoly>> X(testN);
+    vector<Plaintext> W(nr_class);
+    vector<Plaintext> B(nr_class);
 
 
 #pragma omp parallel for
     for (size_t i=0; i<testN; i++){
-
         Plaintext xTemp = cc->MakeCKKSPackedPlaintext(xData[i]);
         X[i] = cc->Encrypt(keyPair.publicKey, xTemp);
-
     }
     cout << "X is encrypted." << endl;
 #pragma omp parallel for
     for (size_t i = 0; i < nr_class; ++i) {
         W[i] = cc->MakeCKKSPackedPlaintext(coefData[i]);
         W[i]->SetFormat(EVALUATION);
-        B[i] = cc->MakeCKKSPackedPlaintext(std::vector<std::complex<double>>(nr_class,rhoData[i]));
+        B[i] = cc->MakeCKKSPackedPlaintext(vector<complex<double>>(nr_class,rhoData[i]));
     }
     cout << "W is packed." << endl;
     encryptionTime = TOC(t);
@@ -247,7 +286,7 @@ int main(int argc, char **argv) {
     }
     decryptionTime = TOC(t);
 
-    print_results(results);
+    print_results(results, patient_Ids);
     cout << "\nKey Generation Time: \t\t" << keyGenTime/1000 << " s" << endl;
     cout << "Encoding and Encryption Time: \t" << encryptionTime/1000 << " s" << endl;
     cout << "Computation Time: \t\t" << computationTime/1000 << " s" << endl;

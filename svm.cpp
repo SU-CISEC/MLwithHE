@@ -10,13 +10,13 @@
 
 using namespace std;
 
-void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
+void ReadMatrixFile(vector<vector<double>> & dataColumns,
                     string dataFileName, size_t N, size_t M)
 {
 
     string fileName = dataFileName + ".csv";
 
-    std::cerr << "file name = " << fileName << std::endl;
+    cerr << "file name = " << fileName << endl;
 
     ifstream file(fileName);
     string line, value;
@@ -24,14 +24,13 @@ void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
     size_t counter = 0;
     while((file.good()) && (counter < N)) {
         getline(file, line);
-//        uint32_t curCols = std::count(line.begin(), line.end(), ',');
         stringstream ss(line);
-        std::vector<double> row(M);
+        vector<double> row(M);
         for(uint32_t i = 0; i < M; i++) {
             string substr;
             getline(ss, substr, ',');
             double val;
-            val = std::stod(substr);
+            val = stod(substr);
             row[i] = val;
         }
         dataColumns.push_back(row);
@@ -40,28 +39,18 @@ void ReadMatrixFile(std::vector<std::vector<double>> & dataColumns,
 
     file.close();
 
-    std::cout << "Read in data: ";
-    std::cout << dataFileName << std::endl;
+    cout << "Read in data: ";
+    cout << dataFileName << endl;
 }
 
-/**
- * Read model parameters file values into different matrix or .
- *
- * @param dataColumns Column vector where the data placed as row of double values.
- * @param dataFileName Path of the file
- * @param M Number of features
- * @param num_class Number of classes
- * @return nothing.
- * @note This functions assumes file does not have header line.
- */
 template <class T>
-void ReadVectorFile(std::vector<T> & dataColumn,
+void ReadVectorFile(vector<T> & dataColumn,
                     string dataFileName, size_t M)
 {
 
     string fileName = dataFileName + ".csv";
 
-    std::cerr << "file name = " << fileName << std::endl;
+    cerr << "file name = " << fileName << endl;
 
     ifstream file(fileName);
     string line;
@@ -77,8 +66,8 @@ void ReadVectorFile(std::vector<T> & dataColumn,
 
     file.close();
 
-    std::cout << "Read in data: ";
-    std::cout << dataFileName << std::endl;
+    cout << "Read in data: ";
+    cout << dataFileName << endl;
 }
 
 double dot(vector<double> px, vector<double> py) {
@@ -103,11 +92,11 @@ double dot(vector<double> px, vector<double> py) {
 int main(){
     //// DATA READ
 
-    std::vector<double> yData;
-    std::vector< std::vector<double>> xData;
+    vector<double> yData;
+    vector< vector<double>> xData;
 
-    std::vector< std::vector<double>> coefData;
-    std::vector<double> Rho;
+    vector< vector<double>> coefData;
+    vector<double> Rho;
 
     size_t testN = 2713;  // how many sample for predicting
     size_t M = 141;
@@ -116,12 +105,12 @@ int main(){
 
 
     //Test Data
-    ReadMatrixFile(xData, "../data/feature141/X_test", testN, M);
-    ReadVectorFile(yData,"../data/feature141/Y_test", testN);
+    ReadMatrixFile(xData, "../data/SampleData/X_test", testN, M);
+    ReadVectorFile(yData,"../data/SampleData/Y_test", testN);
 
     // Precomputed Trained Data
-    ReadMatrixFile(coefData, "../data/feature141/coef",nr_class,M);
-    ReadVectorFile(Rho,"../data/feature141/rho",nr_class);
+    ReadMatrixFile(coefData, "../model/coef",nr_class,M);
+    ReadVectorFile(Rho,"../model/rho",nr_class);
 
     int count_comp = 0;
     for (size_t j = 0; j < testN; ++j) {
@@ -129,7 +118,7 @@ int main(){
         for(size_t i = 0; i<nr_class; i++){
             dec_values[i] = dot(xData[j],coefData[i]);
             dec_values[i] += Rho[i];
-//            cout << "Dec_value["<< i << "]= " << dec_values[i] << std::endl;
+//            cout << "Dec_value["<< i << "]= " << dec_values[i] << endl;
         }
         auto it = max_element(dec_values.begin(), dec_values.end());
 //        cout << "MaxElement= " << *it <<" and its Label=" << << endl;
