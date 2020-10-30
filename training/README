@@ -1,0 +1,27 @@
+Followings are instructions for training process
+
+1. There are 3 different python script and these should be run in order.
+
+2. Before running, you need to install necessary libraries and python 3:
+
+- sklearn
+- xgboost
+- shap
+
+3. Firstly, you need to create input and label vectors by using PrepareInputVectors.py this step read all training data files and create vectors
+
+$ python PrepareInputVectors.py
+
+3.1. You need to enter the path of your data directory
+
+4. Secondly, you need to select best features by using Xgboost and Shap values. After this step best features can be found in tfeatures/Features.txt file.
+
+$ python featureSelection.py
+
+5. Finally, you need to train a SVM model by using these features and input vectors. After this step necessary coef.csv and rho.csv files can be found in modelCoef/ directory. 
+
+$ python modelSVM.py
+
+
+
+
