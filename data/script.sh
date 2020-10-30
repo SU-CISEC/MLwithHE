@@ -53,13 +53,13 @@ for file in $variant_list; do
     done
 
     #get the patient list from the mutations file now
-    cut -f 1 $file\_variants.txt | uniq > patients_temp.txt
+    cut -f 1 $file\_variants.txt | uniq > ../data/patients_temp.txt
     while read pat; do
 	if [[ -z ${PAT[$pat]} ]]; then
 	    PAT[$pat]=$count
 	    count=$((count+1));
 	fi
-    done < patients_temp.txt
+    done < ../data/patients_temp.txt
     
     no_patients=$count;
     no_f_values=$((no_patients*42));
@@ -161,7 +161,7 @@ for file in $variant_list; do
 	    done
 	    printf '\n'
 	fi 
-    done > data.test.txt
+    done > ../data/data.test.txt
 #    sort $file.train.txt > $file.train.sorted.txt
     ELAPSED_TIME=$((SECONDS - START_TIME))
     echo "print time: " $ELAPSED_TIME
