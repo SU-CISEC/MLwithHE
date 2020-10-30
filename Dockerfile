@@ -1,10 +1,10 @@
-# To load image use command below
-    #sudo docker load --input ml-with-he.tar
-FROM ml-with-he:latest
+# To run container save this instruction as Dockerfile and follow the instructions below
+
+FROM ferhatyaman/ml-with-he:latest
 
 WORKDIR /home/user/MLwithHE/cmake-build-debug-docker
-#Make sure your input data is inside the challenge folder or change the name of folder
-COPY ./challenge ../data
+#Make sure your input data is inside the Challenge folder or change the name of folder
+COPY ./Challenge ../data
 
 CMD ["/bin/bash", "-c", "../data/script.sh ; ./svm-HE"]
 
