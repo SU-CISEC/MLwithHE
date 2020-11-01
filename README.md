@@ -1,6 +1,6 @@
 SVM Classification with HE 
 =====================================
-This project is created to predict the type of tumor given by mutations on genes location. This project started for a competition on [iDASH 2020](http://www.humangenomeprivacy.org/2020/competition-tasks.html).
+This project is created to predict the type of tumor given by mutations on genes location. This project is started for a competition on [iDASH 2020](http://www.humangenomeprivacy.org/2020/competition-tasks.html).
 The is implementing of classifying predictions on encrypted data which force us to use Homomorphic Encryption(HE). 
 The project is written by great HE library PALISADE.
 
@@ -17,12 +17,13 @@ The repo includes the following files:
 **Test Data, Test Executables and Metric Scripts**
 
 * data/SampleData - Contains sample data and Python Metric Scripts
-* 
-*
+* svm-HE-test.cpp - Runs on test Sample data and prepares different results other than data
+* svm.cpp - Runs on sample data without HE as a debug tool for Homomorphic Encryption
+
 How to Build and Run the Prototypes
 =====================================
 
-###Preprocessing
+### Preprocessing
 
 1. This script can be run with bash version 3 or higher. To learn your bash version you can run:
     ```
@@ -44,10 +45,9 @@ How to Build and Run the Prototypes
     ```
 
 
-###Homomorphic Prediction
+### Homomorphic Prediction
 
-1. Install SEAL v3.5.8 from [Microsoft SEAL](https://github.com/microsoft/SEAL). Follow the instructions provided in [README.md](https://github.com/microsoft/SEAL/blob/master/README.md).
-   Install PALISADE v1.9.1 from [PALISADE Development Repository](https://gitlab.com/palisade/palisade-development/-/tree/release-v1.9.1). Follow the instructions provided in [README.md](https://gitlab.com/palisade/palisade-development/-/blob/release-v1.9.1/README.md).
+1. Install PALISADE v1.9.1 from [PALISADE Development Repository](https://gitlab.com/palisade/palisade-development/-/tree/release-v1.9.1). Follow the instructions provided in [README.md](https://gitlab.com/palisade/palisade-development/-/blob/release-v1.9.1/README.md).
    
 2. Clone this repository to a local directory and switch to this directory. 
 
@@ -67,10 +67,39 @@ How to Build and Run the Prototypes
 
 5. The results will be written to the "data/results.csv" file.
 
+ # Docker
 
-Additional files with outputs of protocol-specific statistics will also be created.
+1- To run container save this instruction as Dockerfile and follow the instructions below
 
-Docker
-=====================================
+```
+FROM ferhatyaman/ml-with-he:latest
 
-For
+WORKDIR /home/user/MLwithHE/cmake-build-debug-docker
+
+#Make sure your input data is inside the Challenge folder or change the name of folder
+COPY ./Challenge ../data
+
+CMD ["/bin/bash", "-c", "../data/script.sh ; ./svm-HE"]
+```
+2- Build dockerfile using command below
+```
+sudo docker build --tag svm-predictor .
+```
+3- Run Container from latest produced image and give file name as input accordingly
+```
+sudo docker run -it --name idash20-sabanci svm-predictor
+#Give input as ../data/FILENAME Ex: ../data/Bladder_challenge  for Bladder_challenge_variants.txt
+```
+4- Copy results from container to localhost
+```
+sudo docker cp idash20-sabanci:/home/user/MLwithHE/data/results.csv .
+```
+
+# Contributors
+This project is supported by Sabanci University. Main contributors are below.
+* Berke Dilekoğlu
+* Ferhat Yaman
+* Şeyma Mağara
+* Dr. Öznur Taştan
+* Dr. Kamer Kaya
+* Dr. Erkay Savaş
