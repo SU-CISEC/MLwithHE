@@ -31,6 +31,7 @@ include_directories( ${OPENMP_INCLUDES} )
 include_directories( ${PALISADE_INCLUDE} )
 include_directories( ${PALISADE_INCLUDE}/core )
 include_directories( ${PALISADE_INCLUDE}/pke )
+include_directories( ${PALISADE_INCLUDE}/trapdoor )
 
 link_directories( ${PALISADE_LIBDIR} )
 link_directories( ${OPENMP_LIBRARIES} )

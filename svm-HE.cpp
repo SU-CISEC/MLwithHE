@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 //// KEY GENERATION
     TIC(t);
     uint32_t multDepth = 1;
-    uint32_t scaleFactorBits = 20;
+    uint32_t scaleFactorBits = 30;
 
     SecurityLevel securityLevel = HEStd_128_classic;
     // 0 means the library will choose it based on securityLevel
