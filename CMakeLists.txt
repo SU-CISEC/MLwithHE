@@ -29,9 +29,9 @@ set( CMAKE_EXE_LINKER_FLAGS ${PALISADE_EXE_LINKER_FLAGS} )
 
 include_directories( ${OPENMP_INCLUDES} )
 include_directories( ${PALISADE_INCLUDE} )
+include_directories( ${PALISADE_INCLUDE}/third-party/include )
 include_directories( ${PALISADE_INCLUDE}/core )
 include_directories( ${PALISADE_INCLUDE}/pke )
-include_directories( ${PALISADE_INCLUDE}/trapdoor )
 
 link_directories( ${PALISADE_LIBDIR} )
 link_directories( ${OPENMP_LIBRARIES} )
@@ -40,4 +40,5 @@ link_libraries( ${PALISADE_LIBRARIES} )
 ## PALISADE EXECUTABLES
 add_executable(svm-palisade svm-HE-test.cpp)
 add_executable(svm-HE svm-HE.cpp)
-add_executable( svmOVR svm.cpp)
+add_executable(svmOVR svm.cpp)
+add_executable(xgboost-test xgboost-HE-test.cpp)
