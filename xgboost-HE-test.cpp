@@ -103,7 +103,7 @@ void readRowTestData(vector<vector<complex<double>>> & data0,vector<vector<compl
                 iss >> readerInt;
                 currentTestData1.push_back(readerInt);
                 iss >> readerInt;
-                currentTestData1.push_back(readerInt);
+                currentTestData2.push_back(readerInt);
             }
 
             data0.push_back(currentTestData0);
