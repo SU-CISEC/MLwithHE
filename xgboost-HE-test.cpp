@@ -223,12 +223,12 @@ void compareCipher(CryptoContext<DCRTPoly> &cc,vector<Ciphertext<DCRTPoly>> &z, 
     //    #pragma omp parallel for
     for (usint i = 0; i <testN; i++){
         Ciphertext<DCRTPoly> one_minus_x0 = cc->EvalSub(ones_pt,x0[i]);
-        cc->EvalMultMutable(x2[i],y_minus_one_pt);
-        cc->Rescale(x2[i]);
+        x2[i] = cc->EvalMult(x2[i],y_minus_one_pt);
+        x2[i] = cc->Rescale(x2[i]);
         // Check Do Rescale
-        cc->EvalSubMutable(x2[i],y_pt);
-        cc->EvalMultMutable(one_minus_x0,x2[i]);
-        cc->Rescale(one_minus_x0);
+        x2[i]= cc->EvalSub(x2[i],y_pt);
+        one_minus_x0 = cc->EvalMult(one_minus_x0,x2[i]);
+        one_minus_x0= cc->Rescale(one_minus_x0);
         z[i] = cc->EvalAdd(one_minus_x0,ones_pt);
     }
 
@@ -237,7 +237,7 @@ void compareCipher(CryptoContext<DCRTPoly> &cc,vector<Ciphertext<DCRTPoly>> &z, 
 void calculateTree(CryptoContext<DCRTPoly> &cc, vector<Ciphertext<DCRTPoly>> &res, vector<Ciphertext<DCRTPoly>> &z1, vector<Ciphertext<DCRTPoly>> &z2,
                    vector<Ciphertext<DCRTPoly>> &z3, vector<vector<double>> &leaves, usint testN) {
 
-    vector<double> ones(testN,1);
+    vector<double> ones(128*11,1);
     Plaintext ones_pt = cc->MakeCKKSPackedPlaintext(ones);
 
     Plaintext c1 = cc->MakeCKKSPackedPlaintext(leaves[0]);
@@ -250,33 +250,33 @@ void calculateTree(CryptoContext<DCRTPoly> &cc, vector<Ciphertext<DCRTPoly>> &re
         //    f1 = z1 * z2 * c1;
         Ciphertext<DCRTPoly> temp;
         temp = cc->EvalMult(z2[i],c1); // depth 2
-        cc->RescaleInPlace(temp); // depth 1
+        temp = cc->Rescale(temp); // depth 1
         res[i] = cc->EvalMult(temp,z1[i]); // depth 2
 
         //    f2 = z1 * (1 - z2) * c2;
         temp = cc->EvalSub(ones_pt,z2[i]); // depth 1
         temp = cc->EvalMult(temp,c2); // depth 2
-        cc->RescaleInPlace(temp); // depth 1
+        temp = cc->Rescale(temp); // depth 1
         temp = cc->EvalMult(temp,z1[i]); // depth 2
-        cc->EvalAddInPlace(res[i],temp); // depth 2
+        res[i] = cc->EvalAdd(res[i],temp); // depth 2
 
         //    f3 = (1 - z1) * z3 * c3;
         Ciphertext<DCRTPoly> temp2 = cc->EvalSub(ones_pt,z1[i]); // depth 1
         temp = cc->EvalMult(temp2,c3); // depth 2
-        cc->RescaleInPlace(temp); // depth 1
+        temp = cc->Rescale(temp); // depth 1
         temp = cc->EvalMult(temp,z3[i]); // depth 2
-        cc->EvalAddInPlace(res[i],temp); // depth 2
+        res[i] = cc->EvalAdd(res[i],temp); // depth 2
 
         //    f4 = (1 - z1) * (1 - z3) * c4;
         temp = cc->EvalSub(ones_pt,z3[i]); // depth 1
         temp = cc->EvalMult(temp,c4); // depth 2
-        cc->RescaleInPlace(temp); // depth 1
+        temp = cc->Rescale(temp); // depth 1
         // temp2 = (1 - z1)
         temp = cc->EvalMult(temp,temp2); // depth 2
-        cc->EvalAddInPlace(res[i],temp); // depth 2
+        res[i] = cc->EvalAdd(res[i],temp); // depth 2
 
         //    return f1 + f2 + f3 + f4;
-        cc->RescaleInPlace(res[i]); // depth 1
+        res[i] = cc->Rescale(res[i]); // depth 1
     }
 }
 
@@ -314,24 +314,24 @@ int main() {
 
     size_t testN = labels.size();  // how many sample for predicting
     cout << "Test Data Size: " << testN << endl;
-    testN = 10;
+    testN = 2;
     cout << "Tree and Test Data are ready to go...\n";
 
 //// KEY GENERATION
     TIC(t);
-    uint32_t multDepth = 3;
+    uint32_t multDepth = 4;
 
     // 0 means the library will choose it based on securityLevel
-    uint32_t m = 8192;
-//    uint32_t batchSize = m>>2;
-
+    uint32_t m = 0;
+//    //uint32_t batchSize = m>>2;
+//
     CryptoContext<DCRTPoly> cc =
             CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(multDepth,
                                                                  54,
                                                                  0,
                                                                  HEStd_128_classic,
                                                                  m,
-                                                                 APPROXAUTO,
+                                                                 APPROXRESCALE,
                                                                  BV,
                                                                  4,
                                                                  2,
@@ -339,6 +339,9 @@ int main() {
                                                                  0,
                                                                  SPARSE);
 
+//    CryptoContext<DCRTPoly> cc =
+//            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(
+//                    11, 50, 4096, HEStd_128_classic);
     cc->Enable(ENCRYPTION);
     cc->Enable(SHE);
     cc->Enable(LEVELEDSHE);
@@ -388,6 +391,7 @@ int main() {
     compareCipher(cc,z3,X0_r,X2_r, trees_right,testN);
     compareCipher(cc,z2,X0_l,X2_l, trees_left,testN);
 
+
     vector<Ciphertext<DCRTPoly>> res(testN);
 
     calculateTree(cc,res,z1,z2,z3,trees_leaves,testN);
@@ -411,19 +415,16 @@ int main() {
             results[s][i] = value[i].real();
         }
     }
-    vector<double> temp(11,0);
-    for (usint i = 0; i < 11; ++i) {
+    cout << results[0].size() << endl;
+    vector<double> sss(11,0);
+    for (int i = 0; i < 11; ++i) {
         for (int j = 0; j < 128; ++j) {
-            temp[i] += results[0][i*128+j];
+            sss[i] += results[0][i*128+j];
         }
-        cout << "Class " << i << " value: "<<temp[i] << endl;
+        cout << "Class " << i << " value: "<<sss[i] << endl;
     }
 
     cout << "Operation is done!! \n";
-
-
-
-
 
 
     return 0;
