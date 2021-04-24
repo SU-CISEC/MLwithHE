@@ -385,8 +385,8 @@ int main() {
     vector<Ciphertext<DCRTPoly>> z3(testN);
 
     compareCipher(cc,z1,X0_ro,X2_ro, trees_root,testN);
-    compareCipher(cc,z2,X0_r,X2_r, trees_right,testN);
-    compareCipher(cc,z3,X0_l,X2_l, trees_left,testN);
+    compareCipher(cc,z3,X0_r,X2_r, trees_right,testN);
+    compareCipher(cc,z2,X0_l,X2_l, trees_left,testN);
 
     vector<Ciphertext<DCRTPoly>> res(testN);
 
