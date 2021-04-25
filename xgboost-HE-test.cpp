@@ -313,35 +313,33 @@ int main() {
     readLabels(labels, "../xgboost-data/labels.txt");
 
     size_t testN = labels.size();  // how many sample for predicting
-    cout << "Test Data Size: " << testN << endl;
     testN = 2;
+    cout << "Test Data Size: " << testN << endl;
     cout << "Tree and Test Data are ready to go...\n";
 
 //// KEY GENERATION
     TIC(t);
-    uint32_t multDepth = 4;
-
-    // 0 means the library will choose it based on securityLevel
-    uint32_t m = 0;
-//    //uint32_t batchSize = m>>2;
-//
-    CryptoContext<DCRTPoly> cc =
-            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(multDepth,
-                                                                 54,
-                                                                 0,
-                                                                 HEStd_128_classic,
-                                                                 m,
-                                                                 APPROXRESCALE,
-                                                                 BV,
-                                                                 4,
-                                                                 2,
-                                                                 54,
-                                                                 0,
-                                                                 SPARSE);
-
+//    uint32_t multDepth = 4;
+//    // 0 means the library will choose it based on securityLevel
+//    uint32_t m = 0;
+////    //uint32_t batchSize = m>>2;
 //    CryptoContext<DCRTPoly> cc =
-//            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(
-//                    11, 50, 4096, HEStd_128_classic);
+//            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(multDepth,
+//                                                                 54,
+//                                                                 128*11,
+//                                                                 HEStd_128_classic,
+//                                                                 m,
+//                                                                 APPROXAUTO,
+//                                                                 BV,
+//                                                                 5,
+//                                                                 2,
+//                                                                 54,
+//                                                                 0,
+//                                                                 SPARSE);
+
+    CryptoContext<DCRTPoly> cc =
+            CryptoContextFactory<DCRTPoly>::genCryptoContextCKKS(
+                    4, 50, 128*11, HEStd_128_classic);
     cc->Enable(ENCRYPTION);
     cc->Enable(SHE);
     cc->Enable(LEVELEDSHE);
@@ -349,6 +347,9 @@ int main() {
     auto keyPair = cc->KeyGen();
     cc->EvalMultKeysGen(keyPair.secretKey);
     cc->EvalSumKeyGen(keyPair.secretKey);
+    vector<int> ilist = {128};
+    cc->EvalAtIndexKeyGen(keyPair.secretKey, ilist);
+
 //    keyGenTime = TOC(t);
 
     //// ENCODE and ENCRYPTION
@@ -360,6 +361,8 @@ int main() {
     vector<Ciphertext<DCRTPoly>> X2_l(testN);
     vector<Ciphertext<DCRTPoly>> X0_r(testN);
     vector<Ciphertext<DCRTPoly>> X2_r(testN);
+
+
 
 //#pragma omp parallel for
     for (size_t i = 0; i < testN; i++) {
@@ -380,8 +383,6 @@ int main() {
     }
     cout << "X is encrypted." << endl;
 
-    //cout << "Correctness:" << evaluateAllSamples(trees, 128, 11, testDataX0, testDataX2, labels) << endl;
-
     //// XGBOOST COMPARE
     vector<Ciphertext<DCRTPoly>> z1(testN);
     vector<Ciphertext<DCRTPoly>> z2(testN);
@@ -396,32 +397,48 @@ int main() {
 
     calculateTree(cc,res,z1,z2,z3,trees_leaves,testN);
 
-    vector<Ciphertext<DCRTPoly>> sum(testN);
-
-//    for (usint i = 0; i < testN; ++i) {
-//        sum[i] = cc->EvalSum(res[i],128);
-//    }
+    vector<vector<Ciphertext<DCRTPoly>>> sum(testN);
+    for (usint i = 0; i < testN; ++i) {
+        vector<Ciphertext<DCRTPoly>> temp_vec(11);
+        auto temp = cc->EvalSum(res[i],128);
+        temp_vec[0] = temp;
+        for (usint j = 1; j < 11; j++){
+            res[i] = cc->EvalAtIndex(res[i], 128);
+            temp = cc->EvalSum(res[i],128);
+            temp_vec[j] = temp;
+        }
+        sum[i] = temp_vec;
+    }
 
     vector<vector<double>> results(testN);
     for (uint32_t i = 0; i < testN; ++i)
-        results[i] = vector<double>(128*11);
+        results[i] = vector<double>(11);
 
     for (size_t s = 0; s < testN; ++s) {
-        Plaintext result_dec_values;
-        cc->Decrypt(keyPair.secretKey, res[s], &result_dec_values);
-        result_dec_values->SetLength(128*11);
-        for (size_t i = 0; i < 128*11; ++i) {
+        for (size_t i = 0; i < 11; ++i) {
+            Plaintext result_dec_values;
+            cc->Decrypt(keyPair.secretKey, sum[s][i], &result_dec_values);
+            result_dec_values->SetLength(11);
             auto value = result_dec_values->GetCKKSPackedValue();
             results[s][i] = value[i].real();
         }
     }
+//    for (size_t s = 0; s < testN; ++s) {
+//        Plaintext result_dec_values;
+//        cc->Decrypt(keyPair.secretKey, res[s], &result_dec_values);
+//        result_dec_values->SetLength(128*11);
+//        for (size_t i = 0; i < 128*11; ++i) {
+//            auto value = result_dec_values->GetCKKSPackedValue();
+//            results[s][i] = value[i].real();
+//        }
+//    }
     cout << results[0].size() << endl;
     vector<double> sss(11,0);
     for (int i = 0; i < 11; ++i) {
-        for (int j = 0; j < 128; ++j) {
-            sss[i] += results[0][i*128+j];
-        }
-        cout << "Class " << i << " value: "<<sss[i] << endl;
+//        for (int j = 0; j < 128; ++j) {
+//            sss[i] += results[1][i*128+j];
+//        }
+        cout << "Class " << i << " value: "<<results[0][i] << endl;
     }
 
     cout << "Operation is done!! \n";
