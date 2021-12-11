@@ -94,10 +94,46 @@ sudo docker run -it --name idash20-sabanci svm-predictor
 ```
 sudo docker cp idash20-sabanci:/home/user/MLwithHE/data/results.csv .
 ```
+XGBoost Classification with HE 
+=====================================
+This XGBoost Classification is a continuation of the project we started with SVM Classification with HE (see above).
+This github repository includes the implementation of prediction function of XGBOOST algorithm. The algorithm is implemented using both PALISADE and SEAL libraries.
+
+Following files added with XGBoost Support:
+* xgboost.cpp - research prototype for the XGBoost algorithm on PALISADE.
+* xgboost_v3.cpp - similar to version0, minor improvements on tree score calculation
+* xgboost_encModel.cpp -  research prototype for the XGBoost algorithm on PALISADE. Both model and test data is encrypted
+* xgboost_BFV.cpp - research prototype for the XGBoost algorithm on SEAL, BFV scheme is used
+* Data_XGB - contains sample test data and encoded XGBoost model
+
+For more detail see: [ML with HE: Privacy Preserving Machine Learning Inferences for Genome Studies](https://arxiv.org/abs/2110.11446)
+
+### How to Build and Run the Prototypes
+
+1. Install PALISADE v1.11.3 from [PALISADE Development Repository](https://gitlab.com/palisade/palisade-development/-/tree/release-v1.11.3). Follow the instructions provided in [README.md](https://gitlab.com/palisade/palisade-development/-/blob/release-v1.11.3/README.md).
+
+2. Install SEAL v3.6.6 from [Microsoft SEAL Repository](https://github.com/microsoft/SEAL/releases/tag/v3.6.6). Follow the [instructions](https://github.com/microsoft/SEAL#building-microsoft-seal-manually)
+
+3. Clone this repository to a local directory and switch to this directory.
+
+5. Create a directory where the binaries will be built. The typical choice is a subfolder "build". In this case, run the following commands:
+
+    ```
+    mkdir build
+    cd build
+    cmake ..
+    make
+    ```
+
+4. Run the following command to execute the SVM prototype:
+    ```
+    ./xgboost_bfv 
+    ```
 
 # Contributors
 This project is supported by Sabanci University. Main contributors are below.
 * Berke Dilekoğlu
+* Ceren Yıldırım
 * Ferhat Yaman
 * Şeyma Mağara
 * Dr. Öznur Taştan
